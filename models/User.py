@@ -11,3 +11,4 @@ class User(Base):
     mobile_number = Column(Integer, nullable=True)
     location = Column(String, nullable=True)
     password = Column(String, nullable=False)
+    profile_img = Column(String)

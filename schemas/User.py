@@ -23,6 +23,10 @@ class UserProfileUpdate(BaseModel):
         le=9999999999
     )
     location: Optional[str] = None
+    # ❌ DO NOT PUT profile_img HERE
+
+    class Config:
+        from_attributes = True
 
 
 # ---------- RESPONSE (SAFE) ----------
@@ -30,8 +34,8 @@ class UserProfileOut(BaseModel):
     id: int
     username: str
     email: EmailStr
-    mobile_number: Optional[int]   # ✅ NULL allowed
-    location: Optional[str]        # ✅ NULL allowed
-
+    mobile_number: Optional[int]  
+    profile_img: Optional[str]    
+      
     class Config:
         from_attributes = True
