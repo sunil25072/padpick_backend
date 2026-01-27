@@ -10,6 +10,11 @@ class Product(Base):
     price = Column()
     address = Column(String)
     mobile_number = Column(Integer)
+    bedrooms = Column(Integer)
+    img1 = Column(String)
+    img2 = Column(String)
+    img3 = Column(String)
+    img4 = Column(String)
 
     area_id = Column(Integer, ForeignKey("areas.id"))  
     area = relationship("Area", back_populates="products") 

@@ -12,6 +12,11 @@ class Home(Base):
     price = Column(Integer, nullable=False)
     address = Column(String)
     contact_number = Column(Integer)
+    bedrooms = Column(Integer)
+    img1 = Column(String)
+    img2 = Column(String)
+    img3 = Column(String)
+    img4 = Column(String)
 
     area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
     area = relationship("Area", back_populates="homes")

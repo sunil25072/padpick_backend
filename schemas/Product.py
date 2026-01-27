@@ -8,6 +8,11 @@ class ProductCreate(BaseModel):
     price: float
     address: str
     mobile_number: str
+    bedrooms : int
+    img1 : str
+    img2 : str
+    img3 : str
+    img4 : str
     area_id: int  
 
 
