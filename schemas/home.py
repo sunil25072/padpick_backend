@@ -7,7 +7,6 @@ class HomeCreate(BaseModel):
     price: int
     address: str
     contact_number: int
-    bedrooms : int
     img1 : str
     img2 : str
     img3 : str

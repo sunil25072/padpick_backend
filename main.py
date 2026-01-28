@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.session import engine, Base
 from routers.User_router import userrouter
-from routers.Product_router import productrouter
 from routers.home import homerouter
 from routers.area import router
 
@@ -30,7 +29,6 @@ def greet():
 
 # ✅ Routers
 app.include_router(userrouter)
-app.include_router(productrouter)
 app.include_router(homerouter)
 app.include_router(router)
 
