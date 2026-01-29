@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    File,
+    Form
+)
 from sqlalchemy.orm import Session
 from typing import List
 
 from models.User import User
 from schemas.User import (
-    UserCreate,
     LoginSchema,
     UserProfileOut,
     UserProfileUpdate
@@ -19,21 +26,30 @@ userrouter = APIRouter(
     tags=["Users"]
 )
 
-# ================= SIGNUP =================
+# ================= SIGNUP (FORMDATA ✅) =================
 @userrouter.post("/signup", status_code=status.HTTP_201_CREATED)
-def signup(user: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == user.email).first():
+def signup(
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    mobile_number: str = Form(...),
+    location: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # check email
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    if db.query(User).filter(User.username == user.username).first():
+    # check username
+    if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
 
     new_user = User(
-        username=user.username,
-        email=user.email,
-        password=user.password,  # ⚠️ hash later
-        mobile_number=user.mobile_number,
-        location=user.location
+        username=username,
+        email=email,
+        password=password,  # ⚠️ hash later
+        mobile_number=mobile_number,
+        location=location
     )
 
     db.add(new_user)
@@ -45,7 +61,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         "user_id": new_user.id
     }
 
-# ================= LOGIN =================
+# ================= LOGIN (JSON) =================
 @userrouter.post("/login")
 def login(user: LoginSchema, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
@@ -71,7 +87,7 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# ================= UPDATE USER PROFILE (TEXT ONLY) =================
+# ================= UPDATE USER PROFILE =================
 @userrouter.put("/{user_id}/profile", response_model=UserProfileOut)
 def update_user_profile(
     user_id: int,
@@ -91,13 +107,11 @@ def update_user_profile(
     if data.location is not None:
         user.location = data.location
 
-    # ❌ profile_img here illa
-
     db.commit()
     db.refresh(user)
     return user
 
-# ================= UPLOAD PROFILE IMAGE (CLOUDINARY 🔥) =================
+# ================= UPLOAD PROFILE IMAGE =================
 @userrouter.post("/{user_id}/upload-profile-image")
 def upload_profile_image(
     user_id: int,
@@ -118,16 +132,13 @@ def upload_profile_image(
     except Exception:
         raise HTTPException(status_code=500, detail="Cloudinary upload failed")
 
-    image_url = result["secure_url"]
-
-    # 🔥 SAVE FULL CLOUDINARY URL
-    user.profile_img = image_url
+    user.profile_img = result["secure_url"]
     db.commit()
     db.refresh(user)
 
     return {
         "message": "Profile image uploaded successfully",
-        "profile_img": image_url
+        "profile_img": user.profile_img
     }
 
 # ================= DELETE USER =================
@@ -137,7 +148,6 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # (optional) delete cloudinary image
     if user.profile_img:
         try:
             cloudinary.uploader.destroy(f"padpick_profiles/user_{user_id}")
@@ -146,4 +156,5 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
     db.delete(user)
     db.commit()
+
     return {"message": "User deleted successfully"}
