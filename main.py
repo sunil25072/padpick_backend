@@ -7,13 +7,11 @@ from routers.User_router import userrouter
 
 app = FastAPI()
 
-# ✅ CORS MUST BE HERE (BEFORE include_router)
+# 🔥 FINAL CORS CONFIG
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://padpick-frontend.vercel.app"  # frontend domain
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -22,7 +20,6 @@ app.add_middleware(
 def root():
     return {"message": "Padpick Backend is running 🚀"}
 
-# routers AFTER CORS
 app.include_router(area_router)
 app.include_router(homerouter)
 app.include_router(userrouter)
