@@ -5,9 +5,7 @@ from models.areas import Area
 from schemas.home import HomeUpdate
 from dependencies import get_db
 import re
-
 import cloudinary.uploader
-import cloudinary_config  # load config
 
 homerouter = APIRouter(
     prefix="/homes",
