@@ -9,7 +9,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 from typing import List
-from fastapi import Form
+from fastapi import Form, HTTPException
 
 from models.User import User
 from schemas.User import (
@@ -47,7 +47,7 @@ def signup(
             username=username,
             email=email,
             password=password,
-            mobile_number=int(mobile_number),  # 🔥 IMPORTANT
+            mobile_number=int(mobile_number),
             location=location
         )
 
@@ -60,13 +60,16 @@ def signup(
             "user_id": new_user.id
         }
 
+    except HTTPException:
+        # 🔥 VERY IMPORTANT: let FastAPI handle it
+        raise
+
     except Exception as e:
-        print("🔥 SIGNUP ERROR:", str(e))  # appears in Vercel logs
+        print("🔥 SIGNUP ERROR:", str(e))
         raise HTTPException(
             status_code=500,
             detail="Internal server error during signup"
         )
-
 # ================= LOGIN (JSON) =================
 @userrouter.post("/login")
 def login(user: LoginSchema, db: Session = Depends(get_db)):
