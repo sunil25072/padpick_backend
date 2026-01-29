@@ -47,7 +47,7 @@ def signup(
             username=username,
             email=email,
             password=password,
-            mobile_number=int(mobile_number),
+            mobile_number=mobile_number,
             location=location
         )
 
