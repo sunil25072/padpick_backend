@@ -46,14 +46,15 @@ def create_home(
     db: Session = Depends(get_db)
 ):
     if not re.fullmatch(r"[6-9]\d{9}", contact_number):
-        raise HTTPException(400, "Invalid mobile number")
+        raise HTTPException(status_code=400, detail="Invalid mobile number")
 
-    area = db.query(Area).filter(Area.id == area_id).first()  # ✅ FIX
+    # ✅ FIXED HERE
+    area = db.query(Area).filter(Area.area_id == area_id).first()
     if not area:
-        raise HTTPException(400, "Invalid area")
+        raise HTTPException(status_code=400, detail="Invalid area")
 
     if len(house_images) != 4:
-        raise HTTPException(400, "Please upload exactly 4 images")
+        raise HTTPException(status_code=400, detail="Upload exactly 4 images")
 
     image_urls = []
 
@@ -67,7 +68,7 @@ def create_home(
             image_urls.append(result["secure_url"])
         except Exception as e:
             print("🔥 CLOUDINARY ERROR:", e)
-            raise HTTPException(500, "Cloudinary upload failed")
+            raise HTTPException(status_code=500, detail="Cloudinary upload failed")
 
     new_home = Home(
         name=name,
@@ -90,7 +91,6 @@ def create_home(
         "message": "Property posted successfully",
         "home_id": new_home.id
     }
-
 
 # ================= OTHER APIs =================
 

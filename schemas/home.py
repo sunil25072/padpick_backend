@@ -6,7 +6,7 @@ class HomeCreate(BaseModel):
     description: Optional[str] = None
     price: int
     address: str
-    contact_number: int
+    contact_number: str
     img1 : str
     img2 : str
     img3 : str
@@ -19,7 +19,7 @@ class HomeUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[int] = None
     address: Optional[str] = None
-    contact_number: Optional[int] = None
+    contact_number: Optional[str] = None
     area_id: Optional[int] = None
 
 class HomeResponse(BaseModel):
@@ -28,7 +28,7 @@ class HomeResponse(BaseModel):
     description: Optional[str]
     price: int
     address: str
-    contact_number: int
+    contact_number: str
     area_id: int
 
     class Config:
