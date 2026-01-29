@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from db.session import Base
 
+
 class Home(Base):
     __tablename__ = "homes"
 
@@ -17,4 +18,6 @@ class Home(Base):
     img4 = Column(String)
 
     area_id = Column(Integer, ForeignKey("areas.area_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
     area = relationship("Area", back_populates="homes")

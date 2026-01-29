@@ -44,6 +44,7 @@ def create_home(
     area_id: int = Form(...),
     address: str = Form(None),
     contact_number: str = Form(...),
+    user_id: int = Form(...), 
     house_images: list[UploadFile] = File(...),
     db: Session = Depends(get_db)
 ):
@@ -87,7 +88,8 @@ def create_home(
         img2=image_urls[1],  # thumbnail 1
         img3=image_urls[2],  # thumbnail 2
         img4=image_urls[3],  # thumbnail 3
-        area_id=area_id
+        area_id=area_id,
+        user_id=user_id
     )
 
     db.add(new_home)
@@ -101,13 +103,21 @@ def create_home(
 
 
 # ================= OTHER APIs =================
+
+@homerouter.get("/by-user/{user_id}")
+def get_homes_by_user(user_id: int, db: Session = Depends(get_db)):
+    return db.query(Home).filter(Home.user_id == user_id).all()
+
+
 @homerouter.get("/allhomes")
 def get_all_homes(db: Session = Depends(get_db)):
     return db.query(Home).all()
 
+
 @homerouter.get("/by-area/{area_id}")
 def get_homes_by_area(area_id: int, db: Session = Depends(get_db)):
     return db.query(Home).filter(Home.area_id == area_id).all()
+
 
 @homerouter.put("/{home_id}")
 def update_home(home_id: int, home_update: HomeUpdate, db: Session = Depends(get_db)):
@@ -121,6 +131,7 @@ def update_home(home_id: int, home_update: HomeUpdate, db: Session = Depends(get
     db.commit()
     db.refresh(home)
     return home
+
 
 @homerouter.delete("/{home_id}")
 def delete_home(home_id: int, db: Session = Depends(get_db)):
