@@ -9,6 +9,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 from typing import List
+from fastapi import Form
 
 from models.User import User
 from schemas.User import (
@@ -26,7 +27,6 @@ userrouter = APIRouter(
     tags=["Users"]
 )
 
-# ================= SIGNUP (FORMDATA ✅) =================
 @userrouter.post("/signup", status_code=status.HTTP_201_CREATED)
 def signup(
     username: str = Form(...),
@@ -36,30 +36,36 @@ def signup(
     location: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # check email
-    if db.query(User).filter(User.email == email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    try:
+        if db.query(User).filter(User.email == email).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    # check username
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
+        if db.query(User).filter(User.username == username).first():
+            raise HTTPException(status_code=400, detail="Username already registered")
 
-    new_user = User(
-        username=username,
-        email=email,
-        password=password,  # ⚠️ hash later
-        mobile_number=int(mobile_number),
-        location=location
-    )
+        new_user = User(
+            username=username,
+            email=email,
+            password=password,
+            mobile_number=int(mobile_number),  # 🔥 IMPORTANT
+            location=location
+        )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    return {
-        "message": "Signup successful",
-        "user_id": new_user.id
-    }
+        return {
+            "message": "Signup successful",
+            "user_id": new_user.id
+        }
+
+    except Exception as e:
+        print("🔥 SIGNUP ERROR:", str(e))  # appears in Vercel logs
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during signup"
+        )
 
 # ================= LOGIN (JSON) =================
 @userrouter.post("/login")
