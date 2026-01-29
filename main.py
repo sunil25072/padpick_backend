@@ -10,7 +10,9 @@ app = FastAPI()
 # ✅ CORS MUST BE HERE (BEFORE include_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://padpick-frontend.vercel.app"  # frontend domain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
