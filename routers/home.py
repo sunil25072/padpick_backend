@@ -6,6 +6,7 @@ from schemas.home import HomeUpdate
 from dependencies import get_db
 import re
 import cloudinary.uploader
+import cloudinary_config
 
 homerouter = APIRouter(
     prefix="/homes",
@@ -33,8 +34,6 @@ def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
             home.img4
         ]
     }
-
-# ================= POST PROPERTY =================
 @homerouter.post("/add")
 def create_home(
     name: str = Form(...),
@@ -42,50 +41,43 @@ def create_home(
     area_id: int = Form(...),
     address: str = Form(None),
     contact_number: str = Form(...),
-    user_id: int = Form(...), 
+    user_id: int = Form(...),
     house_images: list[UploadFile] = File(...),
     db: Session = Depends(get_db)
 ):
-    # mobile validation
     if not re.fullmatch(r"[6-9]\d{9}", contact_number):
-        raise HTTPException(status_code=400, detail="Invalid mobile number")
+        raise HTTPException(400, "Invalid mobile number")
 
-    area = db.query(Area).filter(Area.area_id == area_id).first()
+    area = db.query(Area).filter(Area.id == area_id).first()  # ✅ FIX
     if not area:
-        raise HTTPException(status_code=400, detail="Invalid area")
+        raise HTTPException(400, "Invalid area")
 
-    # 🔥 OPTIONAL (strongly recommended)
-    if len(house_images) < 4:
-        raise HTTPException(
-            status_code=400,
-            detail="Please upload exactly 4 images"
-        )
+    if len(house_images) != 4:
+        raise HTTPException(400, "Please upload exactly 4 images")
 
     image_urls = []
 
-    # 🔥 Upload MAX 4 images to Cloudinary (FIX HERE)
-    for img in house_images[:4]:
-
-        img.file.seek(0)   # ✅ VERY IMPORTANT FIX
-
-        print("🔥 CLOUDINARY UPLOAD CALLED")
-
-        result = cloudinary.uploader.upload(
-            img.file,
-            folder="padpick/homes"
-        )
-
-        image_urls.append(result["secure_url"])
+    for img in house_images:
+        try:
+            img.file.seek(0)
+            result = cloudinary.uploader.upload(
+                img.file,
+                folder="padpick/homes"
+            )
+            image_urls.append(result["secure_url"])
+        except Exception as e:
+            print("🔥 CLOUDINARY ERROR:", e)
+            raise HTTPException(500, "Cloudinary upload failed")
 
     new_home = Home(
         name=name,
         price=price,
         address=address,
         contact_number=contact_number,
-        img1=image_urls[0],  # main image
-        img2=image_urls[1],  # thumbnail 1
-        img3=image_urls[2],  # thumbnail 2
-        img4=image_urls[3],  # thumbnail 3
+        img1=image_urls[0],
+        img2=image_urls[1],
+        img3=image_urls[2],
+        img4=image_urls[3],
         area_id=area_id,
         user_id=user_id
     )
