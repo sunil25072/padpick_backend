@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from models.home import Home
 from models.areas import Area
-from schemas.home import HomeUpdate
 from dependencies import get_db
 import re
 import cloudinary.uploader
@@ -26,14 +25,16 @@ def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
         "price": home.price,
         "address": home.address,
         "contact_number": home.contact_number,
-        "description": "WiFi, Water, Parking",
+        "area_id": home.area_id,
         "images": [
-            home.img1,
-            home.img2,
-            home.img3,
-            home.img4
+            home.img1 or "",
+            home.img2 or "",
+            home.img3 or "",
+            home.img4 or ""
         ]
     }
+
+# ================= CREATE HOME =================
 @homerouter.post("/add")
 def create_home(
     name: str = Form(...),
@@ -45,10 +46,11 @@ def create_home(
     house_images: list[UploadFile] = File(...),
     db: Session = Depends(get_db)
 ):
+    # 📞 mobile validation
     if not re.fullmatch(r"[6-9]\d{9}", contact_number):
         raise HTTPException(status_code=400, detail="Invalid mobile number")
 
-    # ✅ FIXED HERE
+    # 🏙 area validation
     area = db.query(Area).filter(Area.area_id == area_id).first()
     if not area:
         raise HTTPException(status_code=400, detail="Invalid area")
@@ -57,7 +59,6 @@ def create_home(
         raise HTTPException(status_code=400, detail="Upload exactly 4 images")
 
     image_urls = []
-
     for img in house_images:
         try:
             img.file.seek(0)
@@ -92,23 +93,12 @@ def create_home(
         "home_id": new_home.id
     }
 
-# ================= OTHER APIs =================
-
+# ================= GET BY USER =================
 @homerouter.get("/by-user/{user_id}")
 def get_homes_by_user(user_id: int, db: Session = Depends(get_db)):
     return db.query(Home).filter(Home.user_id == user_id).all()
 
-
-@homerouter.get("/allhomes")
-def get_all_homes(db: Session = Depends(get_db)):
-    return db.query(Home).all()
-
-
-@homerouter.get("/by-area/{area_id}")
-def get_homes_by_area(area_id: int, db: Session = Depends(get_db)):
-    return db.query(Home).filter(Home.area_id == area_id).all()
-
-
+# ================= UPDATE HOME =================
 @homerouter.put("/{home_id}")
 def update_home(
     home_id: int,
@@ -124,13 +114,11 @@ def update_home(
     if not home:
         raise HTTPException(status_code=404, detail="Home not found")
 
-    # ✅ MOBILE VALIDATION
     if contact_number:
         if not re.fullmatch(r"[6-9]\d{9}", contact_number):
             raise HTTPException(status_code=400, detail="Invalid mobile number")
         home.contact_number = contact_number
 
-    # ✅ TEXT UPDATE
     if name:
         home.name = name
     if price:
@@ -143,7 +131,6 @@ def update_home(
             raise HTTPException(status_code=400, detail="Invalid area")
         home.area_id = area_id
 
-    # ✅ IMAGE UPDATE (OPTIONAL)
     if house_images and len(house_images) > 0:
         if len(house_images) > 4:
             raise HTTPException(status_code=400, detail="Max 4 images allowed")
@@ -174,6 +161,7 @@ def update_home(
         "home_id": home.id
     }
 
+# ================= DELETE HOME =================
 @homerouter.delete("/{home_id}")
 def delete_home(home_id: int, db: Session = Depends(get_db)):
     home = db.query(Home).filter(Home.id == home_id).first()

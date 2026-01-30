@@ -7,12 +7,15 @@ from routers.User_router import userrouter
 
 app = FastAPI()
 
-# 🔥 FINAL CORS CONFIG
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://padpick-frontend.vercel.app",
+        "http://localhost:5503",
+        "http://127.0.0.1:5503"
+    ],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
