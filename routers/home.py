@@ -12,27 +12,24 @@ homerouter = APIRouter(
     tags=["Homes"]
 )
 
-# ================= GET HOME BY ID =================
-@homerouter.get("/{home_id}")
-def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
-    home = db.query(Home).filter(Home.id == home_id).first()
-    if not home:
-        raise HTTPException(status_code=404, detail="Home not found")
+# =================================================
+# 🔥 IMPORTANT:
+# Specific routes MUST come first
+# =================================================
 
-    return {
-        "id": home.id,
-        "name": home.name,
-        "price": home.price,
-        "address": home.address,
-        "contact_number": home.contact_number,
-        "area_id": home.area_id,
-        "images": [
-            home.img1 or "",
-            home.img2 or "",
-            home.img3 or "",
-            home.img4 or ""
-        ]
-    }
+# ================= GET HOMES BY AREA =================
+@homerouter.get("/by-area/{area_id}")
+def get_homes_by_area(area_id: int, db: Session = Depends(get_db)):
+    homes = db.query(Home).filter(Home.area_id == area_id).all()
+    return homes
+
+
+# ================= GET HOMES BY USER =================
+@homerouter.get("/by-user/{user_id}")
+def get_homes_by_user(user_id: int, db: Session = Depends(get_db)):
+    homes = db.query(Home).filter(Home.user_id == user_id).all()
+    return homes
+
 
 # ================= CREATE HOME =================
 @homerouter.post("/add")
@@ -59,12 +56,14 @@ def create_home(
         raise HTTPException(status_code=400, detail="Upload exactly 4 images")
 
     image_urls = []
+
     for img in house_images:
         try:
             img.file.seek(0)
             result = cloudinary.uploader.upload(
-                img.file,
-                folder="padpick/homes"
+                img.file.read(),
+                folder="padpick/homes",
+                resource_type="image"
             )
             image_urls.append(result["secure_url"])
         except Exception as e:
@@ -93,10 +92,6 @@ def create_home(
         "home_id": new_home.id
     }
 
-# ================= GET BY USER =================
-@homerouter.get("/by-user/{user_id}")
-def get_homes_by_user(user_id: int, db: Session = Depends(get_db)):
-    return db.query(Home).filter(Home.user_id == user_id).all()
 
 # ================= UPDATE HOME =================
 @homerouter.put("/{home_id}")
@@ -114,23 +109,27 @@ def update_home(
     if not home:
         raise HTTPException(status_code=404, detail="Home not found")
 
+    # 📞 mobile validation
     if contact_number:
         if not re.fullmatch(r"[6-9]\d{9}", contact_number):
             raise HTTPException(status_code=400, detail="Invalid mobile number")
         home.contact_number = contact_number
 
+    # ✏️ text updates
     if name:
         home.name = name
     if price:
         home.price = price
     if address:
         home.address = address
+
     if area_id:
         area = db.query(Area).filter(Area.area_id == area_id).first()
         if not area:
             raise HTTPException(status_code=400, detail="Invalid area")
         home.area_id = area_id
 
+    # 🖼 optional image update
     if house_images and len(house_images) > 0:
         if len(house_images) > 4:
             raise HTTPException(status_code=400, detail="Max 4 images allowed")
@@ -140,8 +139,9 @@ def update_home(
             try:
                 img.file.seek(0)
                 result = cloudinary.uploader.upload(
-                    img.file,
-                    folder="padpick/homes"
+                    img.file.read(),
+                    folder="padpick/homes",
+                    resource_type="image"
                 )
                 image_urls.append(result["secure_url"])
             except Exception as e:
@@ -161,6 +161,7 @@ def update_home(
         "home_id": home.id
     }
 
+
 # ================= DELETE HOME =================
 @homerouter.delete("/{home_id}")
 def delete_home(home_id: int, db: Session = Depends(get_db)):
@@ -171,3 +172,25 @@ def delete_home(home_id: int, db: Session = Depends(get_db)):
     db.delete(home)
     db.commit()
     return {"message": "Home deleted successfully"}
+
+
+# ================= GET HOME BY ID =================
+# ⚠️ ALWAYS KEEP THIS LAST
+@homerouter.get("/{home_id}")
+def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
+    home = db.query(Home).filter(Home.id == home_id).first()
+    if not home:
+        raise HTTPException(status_code=404, detail="Home not found")
+
+    return {
+        "id": home.id,
+        "name": home.name,
+        "price": home.price,
+        "address": home.address,
+        "contact_number": home.contact_number,
+        "area_id": home.area_id,
+        "img1": home.img1 or "",
+        "img2": home.img2 or "",
+        "img3": home.img3 or "",
+        "img4": home.img4 or ""
+    }
