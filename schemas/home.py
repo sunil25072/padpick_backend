@@ -19,7 +19,7 @@ class HomeUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[int] = None
     address: Optional[str] = None
-    contact_number: Optional[str] = None
+    contact_number: Optional[int] = None
     area_id: Optional[int] = None
 
 class HomeResponse(BaseModel):

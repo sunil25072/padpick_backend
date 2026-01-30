@@ -110,18 +110,69 @@ def get_homes_by_area(area_id: int, db: Session = Depends(get_db)):
 
 
 @homerouter.put("/{home_id}")
-def update_home(home_id: int, home_update: HomeUpdate, db: Session = Depends(get_db)):
+def update_home(
+    home_id: int,
+    name: str = Form(None),
+    price: int = Form(None),
+    area_id: int = Form(None),
+    address: str = Form(None),
+    contact_number: str = Form(None),
+    house_images: list[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
     home = db.query(Home).filter(Home.id == home_id).first()
     if not home:
         raise HTTPException(status_code=404, detail="Home not found")
 
-    for key, value in home_update.dict(exclude_unset=True).items():
-        setattr(home, key, value)
+    # ✅ MOBILE VALIDATION
+    if contact_number:
+        if not re.fullmatch(r"[6-9]\d{9}", contact_number):
+            raise HTTPException(status_code=400, detail="Invalid mobile number")
+        home.contact_number = contact_number
+
+    # ✅ TEXT UPDATE
+    if name:
+        home.name = name
+    if price:
+        home.price = price
+    if address:
+        home.address = address
+    if area_id:
+        area = db.query(Area).filter(Area.area_id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=400, detail="Invalid area")
+        home.area_id = area_id
+
+    # ✅ IMAGE UPDATE (OPTIONAL)
+    if house_images and len(house_images) > 0:
+        if len(house_images) > 4:
+            raise HTTPException(status_code=400, detail="Max 4 images allowed")
+
+        image_urls = []
+        for img in house_images:
+            try:
+                img.file.seek(0)
+                result = cloudinary.uploader.upload(
+                    img.file,
+                    folder="padpick/homes"
+                )
+                image_urls.append(result["secure_url"])
+            except Exception as e:
+                print("🔥 CLOUDINARY ERROR:", e)
+                raise HTTPException(status_code=500, detail="Cloudinary upload failed")
+
+        if len(image_urls) > 0: home.img1 = image_urls[0]
+        if len(image_urls) > 1: home.img2 = image_urls[1]
+        if len(image_urls) > 2: home.img3 = image_urls[2]
+        if len(image_urls) > 3: home.img4 = image_urls[3]
 
     db.commit()
     db.refresh(home)
-    return home
 
+    return {
+        "message": "Property updated successfully",
+        "home_id": home.id
+    }
 
 @homerouter.delete("/{home_id}")
 def delete_home(home_id: int, db: Session = Depends(get_db)):
