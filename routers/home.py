@@ -181,7 +181,6 @@ def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
     home = db.query(Home).filter(Home.id == home_id).first()
     if not home:
         raise HTTPException(status_code=404, detail="Home not found")
-
     return {
         "id": home.id,
         "name": home.name,
@@ -189,8 +188,10 @@ def get_home_by_id(home_id: int, db: Session = Depends(get_db)):
         "address": home.address,
         "contact_number": home.contact_number,
         "area_id": home.area_id,
-        "img1": home.img1 or "",
-        "img2": home.img2 or "",
-        "img3": home.img3 or "",
-        "img4": home.img4 or ""
-    }
+        "images": [
+            home.img1,
+            home.img2,
+            home.img3,
+            home.img4
+        ]
+}
